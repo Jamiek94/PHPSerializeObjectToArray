@@ -10,8 +10,8 @@ Here is an example with an review object which contains two methods which return
 
 **Comment**
 
- - getSubject
- - getDescription
+ - getSubject : string
+ - getDescription : string
 
 Will be transformed into:
 
