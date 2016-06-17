@@ -13,17 +13,17 @@ class ArrayHelper
         $reflectionClass = new ReflectionClass(get_class($object));
         $array = [];
         foreach ($reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
-            if ($method->isConstructor() || !ArrayHelper::isGetter($method->getName())) { continue; }
+            if ($method->isConstructor() || !ArrayHelper::isGetter($method->getName())) {
+                continue;
+            }
 
             $invokeResult = $method->invoke($object);
 
-            if(is_array($invokeResult)){
+            if (is_array($invokeResult)) {
                 $array[ArrayHelper::getPropertyName($method->getName())] = ArrayHelper::getArrayFromArrayOfObjects($method->invoke($object));
-            }
-            else if(is_object($invokeResult)){
+            } else if (is_object($invokeResult)) {
                 $array[ArrayHelper::getPropertyName($method->getName())] = ArrayHelper::getArrayFromObject($method->invoke($object));
-            }
-            else{
+            } else {
                 $array[ArrayHelper::getPropertyName($method->getName())] = $invokeResult;
             }
         }
@@ -79,14 +79,21 @@ class ArrayHelper
     private static function replaceCapitalisedWithUnderscore($method_name)
     {
         $newMethodName = $method_name;
-
-        foreach (str_split($newMethodName) as $index => $character) {
-            if (ctype_upper($character)) {
-                $newMethodName[$index] = strtolower($character);
-                $newMethodName = substr_replace($newMethodName, '_', $index, 0);
+        $index = 0;
+        while(strlen($newMethodName) > $index){
+            if (ctype_upper($newMethodName[$index])) {
+                $newMethodName[$index] = strtolower($newMethodName[$index]);
+                $newMethodName = ArrayHelper::insertAtPosition($newMethodName, "_", $index - 1);
+                $index = 0;
             }
+            $index++;
         }
 
         return $newMethodName;
+    }
+
+    private static function insertAtPosition(string $string, string $insert, int $position)
+    {
+        return substr($string, 0, $position + 1) . $insert . substr($string, $position + 1, strlen($string) - $position - 1);
     }
 }
