@@ -19,7 +19,7 @@ class ArrayHelper
 
             $invokeResult = $method->invoke($object);
 
-            if (is_array($invokeResult) && is_object($invokeResult)) {
+            if (is_array($invokeResult) && sizeof($invokeResult) > 0 && is_object($invokeResult[0])) {
                 $array[ArrayHelper::getPropertyName($method->getName())] = ArrayHelper::getArrayFromArrayOfObjects($method->invoke($object));
             } else if (is_object($invokeResult)) {
                 $array[ArrayHelper::getPropertyName($method->getName())] = ArrayHelper::getArrayFromObject($method->invoke($object));
