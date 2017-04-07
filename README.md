@@ -48,3 +48,5 @@ All you have to do is wrap json_encode around the output.
  - Private methods are ignored
  - Constructors are ignored
  - Capital characters in the method name will be replaced with an underscore and lowercased character
+ 
+ Note: I added some functionality for Laravel collections. If you don't use Laravel I recommend to delete lines 27 - 29.
