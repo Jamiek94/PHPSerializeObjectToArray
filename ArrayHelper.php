@@ -1,8 +1,6 @@
 <?php
 
-
-namespace App\Helpers;
-
+use Illuminate\Support\Collection;
 use ReflectionClass;
 use ReflectionMethod;
 
@@ -11,46 +9,51 @@ class ArrayHelper
     public static function getArrayFromObject($object)
     {
         $reflectionClass = new ReflectionClass(get_class($object));
+
         $array = [];
         foreach ($reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
-            if ($method->isConstructor() || !ArrayHelper::isGetter($method->getName())) {
+
+            if ($method->isConstructor() || $method->getNumberOfRequiredParameters() > 0) {
                 continue;
             }
 
             $invokeResult = $method->invoke($object);
 
             if (is_array($invokeResult) && sizeof($invokeResult) > 0 && is_object($invokeResult[0])) {
-                $array[ArrayHelper::getPropertyName($method->getName())] = ArrayHelper::getArrayFromArrayOfObjects($method->invoke($object));
+                $array[ArrayHelper::getPropertyName($method->getName())] = ArrayHelper::getArrayFromArrayOfObjects($invokeResult);
+            } else if (is_object($invokeResult) && $invokeResult instanceof Collection) {
+                $array[ArrayHelper::getPropertyName($method->getName())] = ArrayHelper::getArrayFromArrayOfObjects($invokeResult->toArray());
             } else if (is_object($invokeResult)) {
-                $array[ArrayHelper::getPropertyName($method->getName())] = ArrayHelper::getArrayFromObject($method->invoke($object));
+                $array[ArrayHelper::getPropertyName($method->getName())] = ArrayHelper::getArrayFromObject($invokeResult);
             } else {
                 $array[ArrayHelper::getPropertyName($method->getName())] = $invokeResult;
             }
         }
+
         return $array;
     }
 
-    public static function getArrayFromArrayOfObjects($objects, string $key = null)
+    public static function getArrayFromArrayOfObjects($objects)
     {
         $array = [];
 
         foreach ($objects as $object) {
-            if ($key) {
-                array_push($array, ArrayHelper::getArrayFromObject($object));
-            } else {
-                array_push($array, ArrayHelper::getArrayFromObject($object));
-            }
+            array_push($array, ArrayHelper::getArrayFromObject($object));
         }
 
         return $array;
     }
 
-    private static function isGetter(string $method_name) : bool
+    public static function getFloatArrayFromString($value, $delimiter = ",")
     {
-        return 0 === strpos($method_name, 'get');
+        $values = explode($delimiter, $value);
+
+        return array_map(function ($value) {
+            return floatval($value);
+        }, $values);
     }
 
-    private static function getPropertyName(string $method_name) : string
+    private static function getPropertyName(string $method_name): string
     {
         $modifiers = ['App\Helpers\ArrayHelper::removeGet', 'App\Helpers\ArrayHelper::lowerCaseFirstLetter', 'App\Helpers\ArrayHelper::replaceCapitalisedWithUnderscore'];
         $newMethodName = $method_name;
@@ -64,8 +67,11 @@ class ArrayHelper
 
     private static function removeGet($method_name)
     {
-        $newMethodName = $method_name;
-        return substr($newMethodName, 3);
+        if (starts_with($method_name, 'get')) {
+            return substr($method_name, 3);
+        }
+
+        return $method_name;
     }
 
     private static function lowerCaseFirstLetter($method_name)
@@ -80,7 +86,7 @@ class ArrayHelper
     {
         $newMethodName = $method_name;
         $index = 0;
-        while(strlen($newMethodName) > $index){
+        while (strlen($newMethodName) > $index) {
             if (ctype_upper($newMethodName[$index])) {
                 $newMethodName[$index] = strtolower($newMethodName[$index]);
                 $newMethodName = ArrayHelper::insertAtPosition($newMethodName, "_", $index - 1);
